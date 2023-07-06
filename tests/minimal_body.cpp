@@ -97,12 +97,12 @@ minimal()
 		MoorDyn_Close(system);
 		return false;
 	}
-	CHECK_VALUE("body x", x[0], 0);
-	CHECK_VALUE("body y", x[1], 0);
-	CHECK_VALUE("body z", x[2], COG_Z);
-	CHECK_VALUE("body Rx", x[3], 0);
-	CHECK_VALUE("body Ry", x[4], 0);
-	CHECK_VALUE("body Rz", x[5], 0);
+	CHECK_VALUE("body x", 0, x[0]);
+	CHECK_VALUE("body y", 0, x[1]);
+	CHECK_VALUE("body z", COG_Z, x[2]);
+	CHECK_VALUE("body Rx", 0, x[3]);
+	CHECK_VALUE("body Ry", 0, x[4]);
+	CHECK_VALUE("body Rz", 0, x[5]);
 
 	// Get the initial position of the fairleads
 	double xf_ref[9];
