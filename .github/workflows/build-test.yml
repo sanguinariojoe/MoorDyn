@@ -2,7 +2,7 @@ name: CMake
 
 on:
   push:
-    branches: [ $default-branch, master ]
+    branches: [ $default-branch, master, inst_for_alex ]
   pull_request:
     branches:
       - "**"
