@@ -735,7 +735,9 @@ namespace fileIO {
  */
 std::vector<std::string>
 fileToLines(const std::filesystem::path& path);
+
 }
+
 /**
  * @}
  */
