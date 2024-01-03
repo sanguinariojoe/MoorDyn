@@ -31,7 +31,6 @@ set(CPP_TESTS
     io
     rods
     bodies_and_rods
-    quasi_static_chain
     wavekin_4
     tripod
     seafloor
@@ -43,6 +42,7 @@ set(CPP_TESTS
 set(CATCH2_TESTS 
     math_tests
     testDecomposeString
+    quasi_static_chain
     local_euler
 )
 
