@@ -44,6 +44,7 @@ set(CATCH2_TESTS
     testDecomposeString
     quasi_static_chain
     local_euler
+    polyester
 )
 
 function(make_executable test_name, extension)
