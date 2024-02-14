@@ -46,9 +46,9 @@
 #define KRS 13.4
 #define KRD1 16.0
 #define KRD2 0.35
-#define TC 200.0
+#define TC 1000.0
 // The tensions expected, on inverse order
-#define TTIMES { 320.0, 640.0, 960.0, 1280.0, 1599.0 }
+#define TTIMES { 1320.0, 2640.0, 3960.0, 5280.0, 6599.0 }
 #define TMEANS { 0.1, 0.2, 0.3, 0.4, 0.5 }
 
 
@@ -126,6 +126,9 @@ TEST_CASE("Ramp up, stabilization and cycles")
 	std::deque<double> tensions;  
 	std::deque<double> ttimes(TTIMES);
 	std::deque<double> tmeans(TMEANS);
+	std::ofstream myfile;
+	myfile.open ("polyester.csv");
+	myfile << "\"Time (s)\"" << "," << "\"Tension (N)\"" << "," << "\"EA (N)\"" << "," << "\"l (m)\"" << std::endl;
 	for (unsigned int i = 0; i < tdata.size(); i++) {
 		REQUIRE(MoorDyn_GetPointPos(fairlead, r) == MOORDYN_SUCCESS);
 		double t_dst = tdata.at(i);
@@ -136,6 +139,11 @@ TEST_CASE("Ramp up, stabilization and cycles")
 		REQUIRE(MoorDyn_Step(system, r, dr, f, &t, &dt) == MOORDYN_SUCCESS);
 		times.push_back(t);
 		tensions.push_back(get_average_tension(line, anchor, fairlead));
+
+		double ea, ll;
+		MoorDyn_GetLineConstantEA(line, &ea);
+		MoorDyn_GetLineUnstretchedLength(line, &ll);
+		myfile << t << "," << tensions.back() << "," << ea << "," << ll << std::endl;
 
 		// Let's check and tweak the line if there is info enough
 		if (times.back() - times.front() < TC)
@@ -164,6 +172,7 @@ TEST_CASE("Ramp up, stabilization and cycles")
 				fabs(tension / MBL - tmean) < 0.025);
 		}
 	}
+	myfile.close();
 
 	REQUIRE(MoorDyn_Close(system) == MOORDYN_SUCCESS);
 }
