@@ -57,9 +57,9 @@ double vec_norm(const double v[3])
 	return sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 }
 
-double get_average_tension(MoorDynLine line,
-                           MoorDynPoint anchor,
-                           MoorDynPoint fairlead)
+double get_line_tension(MoorDynLine line,
+                        MoorDynPoint anchor,
+                        MoorDynPoint fairlead)
 {
 	unsigned int n;
 	REQUIRE(MoorDyn_GetLineN(line, &n) == MOORDYN_SUCCESS);
@@ -77,6 +77,16 @@ double get_average_tension(MoorDynLine line,
 		tension += vec_norm(force);
 	}
 	return tension / (n + 1);
+}
+
+double weighted_average(std::deque<double> v)
+{
+	unsigned int n = v.size();
+	double w = 0.5 * (n + 1) * n;
+	double sum = 0.0;
+	for (unsigned int i = 0; i < n; i++)
+		sum += v[i] * (i + 1);
+	return sum / w;
 }
 
 TEST_CASE("Ramp up, stabilization and cycles")
@@ -122,8 +132,8 @@ TEST_CASE("Ramp up, stabilization and cycles")
 	// Time to move
 	double t = 0.0, dt;
 	// Data about the lenght and stiffness recomputation as a function of time
-	std::deque<double> times;  
-	std::deque<double> tensions;  
+	std::deque<double> times({0.0});
+	std::deque<double> tensions({get_line_tension(line, anchor, fairlead)});  
 	std::deque<double> ttimes(TTIMES);
 	std::deque<double> tmeans(TMEANS);
 	std::ofstream myfile;
@@ -138,24 +148,22 @@ TEST_CASE("Ramp up, stabilization and cycles")
 		double f[3];
 		REQUIRE(MoorDyn_Step(system, r, dr, f, &t, &dt) == MOORDYN_SUCCESS);
 		times.push_back(t);
-		tensions.push_back(get_average_tension(line, anchor, fairlead));
+		tensions.push_back(get_line_tension(line, anchor, fairlead));
+		// Just keep the last TC seconds
+		while (times.back() - times.front() > TC) {
+			times.pop_front();
+			tensions.pop_front();
+		}
 
 		double ea, ll;
 		MoorDyn_GetLineConstantEA(line, &ea);
 		MoorDyn_GetLineUnstretchedLength(line, &ll);
-		myfile << t << "," << tensions.back() << "," << ea << "," << ll << std::endl;
+		myfile << t << ","
+		       << tensions.back() << ","
+		       << ea << ","
+		       << ll << std::endl;
 
-		// Let's check and tweak the line if there is info enough
-		if (times.back() - times.front() < TC)
-			continue;
-
-		double tension = 0.0;
-		for (auto f : tensions)
-			tension += f;
-		tension /= tensions.size();
-		times.pop_front();
-		tensions.pop_front();
-
+		double tension = weighted_average(tensions);
 		double ks = KRS * MBL;
 		double kd = (KRD1 + KRD2 * tension / MBL * 100) * MBL;
 		double l = l0 * (1.0 + tension / ks) / (1.0 + tension / kd);
