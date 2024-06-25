@@ -26,7 +26,8 @@
 
 # Flags for compiling with clang (OSX default)
 LFLAGS = -shared -DOSX -DMoorDyn_EXPORTS -fPIC
-CFLAGS = -c -O3 -static -g -Wall -Wextra -DOSX -DMoorDyn_EXPORTS -fPIC -I../../source/
+CFLAGS = -c -O3 -static -g -Wall -Wextra -DOSX -DMoorDyn_EXPORTS -fPIC -I../../source/ -DMOORDYN_MAJOR_VERSION=2 -DMOORDYN_MINOR_VERSION=3 -DMOORDYN_PATCH_VERSION=4
+$(info **** MoorDyn version name does not auto update. Name may not reflect compiled version ****)
 
 CFLAGS += $(COPTS)
 LFLAGS += $(LOPTS)
