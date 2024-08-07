@@ -50,11 +50,11 @@ jobs:
 
       - name:
         run: |
-            if [ "${{inputs.os}}" == '["ubuntu-22.04"]' ]; then
+            if [ '${{inputs.os}}' == '["ubuntu-22.04"]' ]; then
                 echo "VTK_NAME=vtk-manylinux2014_${{inputs.arch}}.tar.gz" >> $GITHUB_ENV
-            elif [ "${{inputs.os}}" == '["macOS-latest"]' ]; then
+            elif [ '${{inputs.os}}' == '["macOS-latest"]' ]; then
                 echo "VTK_NAME=vtk-macOS-x86_64.tar.gz" >> $GITHUB_ENV
-            elif [ "${{inputs.os}}" == '["windows-latest"]' ]; then
+            elif [ '${{inputs.os}}' == '["windows-latest"]' ]; then
                 echo "VTK_NAME=vtk-Windows-x86_64.tar.gz" >> $GITHUB_ENV
             else
                 exit 255
