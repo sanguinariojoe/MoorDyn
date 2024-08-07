@@ -87,6 +87,7 @@ jobs:
             if [ ! -d "vtk/lib" ]; then
                 ln -s vtk/lib64 vtk/lib
             fi
+            ls -lh vtk/
         if: runner.os == 'Linux'
 
       - name: Extract VTK tgz (Windows)
