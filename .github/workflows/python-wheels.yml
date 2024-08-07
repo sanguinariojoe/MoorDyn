@@ -67,10 +67,10 @@ jobs:
     secrets: inherit
 
   build_MacOS_x86_64:
-    name: Build Windows_x86_64
+    name: Build MacOS_x86_64
     uses: core-marine-dev/MoorDyn/.github/workflows/python-wheels-emulated.yml@python
     with:
-      os: '["macOS-latest"]'
+      os: '["macOS-12"]'
       arch: "x86_64"
     secrets: inherit
 
@@ -162,12 +162,6 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: python-wheels-Linux_s390x
-          path: dist/
-
-      - name: Download MacOS_universal2
-        uses: actions/download-artifact@v3
-        with:
-          name: python-wheels-MacOS_universal2
           path: dist/
 
       - name: Publish package to TestPyPI
