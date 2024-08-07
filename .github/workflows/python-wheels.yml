@@ -176,6 +176,7 @@ jobs:
           password: ${{ secrets.MOORDYN_TESTPYPI_API }}
           repository-url: https://test.pypi.org/legacy/
           skip-existing: true
+        if: github.event_name == 'push' && github.ref != 'refs/heads/main'
 
       - name: Publish package to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1

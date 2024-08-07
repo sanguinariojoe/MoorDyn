@@ -94,6 +94,7 @@ jobs:
         uses: docker/setup-qemu-action@v3
         with:
           platforms: all
+        if: runner.os == 'Linux'
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.20.0
@@ -113,5 +114,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         id: build_wheels
         with:
-          name: python-wheels-${{inputs.arch}}
+          name: python-wheels-${{runner.os}}_${{inputs.arch}}
           path: ./dist/*
