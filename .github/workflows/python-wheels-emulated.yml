@@ -101,16 +101,6 @@ jobs:
         uses: pypa/cibuildwheel@v2.20.0
         with:
             output-dir: dist
-        env:
-          # configure cibuildwheel to build native archs ('auto'), and some
-          # emulated ones
-          CIBW_ARCHS_LINUX: ${{inputs.arch}}
-          # Skip 32-bit wheels builds as well as musllinux
-          CIBW_SKIP: "*-win32 *musllinux*"
-          CIBW_BEFORE_ALL_LINUX: >
-            echo "Considering vtk-manylinux2014_`uname -m`.tar.gz..." &&
-            mkdir -p vtk &&
-            tar -xvzf vtk-manylinux2014_`uname -m`.tar.gz -C vtk/
 
       - uses: actions/upload-artifact@v4
         id: build_wheels
