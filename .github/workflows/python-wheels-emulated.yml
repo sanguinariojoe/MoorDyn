@@ -48,23 +48,26 @@ jobs:
             cat pyproject.toml
         shell: bash
 
-      - name:
-        run: |
-            if [ '${{inputs.os}}' == '["ubuntu-22.04"]' ]; then
-                echo "VTK_NAME=vtk-manylinux2014_${{inputs.arch}}.tar.gz" >> $GITHUB_ENV
-            elif [ '${{inputs.os}}' == '["macOS-latest"]' ]; then
-                echo "VTK_NAME=vtk-macOS-x86_64.tar.gz" >> $GITHUB_ENV
-            elif [ '${{inputs.os}}' == '["windows-latest"]' ]; then
-                echo "VTK_NAME=vtk-Windows-x86_64.tar.gz" >> $GITHUB_ENV
-            else
-                exit 255
-            fi
-  
-      - name: download pre-built VTK static library
+      - name: download pre-built VTK static library (Linux)
         uses: suisei-cn/actions-download-file@v1.6.0
         with:
-          url: https://github.com/sanguinariojoe/vtk-builds/releases/download/VTK-9.2.6-static/$VTK_NAME
+          url: https://github.com/sanguinariojoe/vtk-builds/releases/download/VTK-9.2.6-static/vtk-manylinux2014_${{inputs.arch}}.tar.gz
           target: ${{github.workspace}}/
+        if: runner.os == 'Linux'
+
+      - name: download pre-built VTK static library (MacOS)
+        uses: suisei-cn/actions-download-file@v1.6.0
+        with:
+          url: https://github.com/sanguinariojoe/vtk-builds/releases/download/VTK-9.2.6-static/vtk-macOS-x86_64.tar.gz
+          target: ${{github.workspace}}/
+        if: runner.os == 'MacOS'
+
+      - name: download pre-built VTK static library (Windows)
+        uses: suisei-cn/actions-download-file@v1.6.0
+        with:
+          url: https://github.com/sanguinariojoe/vtk-builds/releases/download/VTK-9.2.6-static/vtk-Windows-x86_64.tar.gz
+          target: ${{github.workspace}}/
+        if: runner.os == 'Windows'
 
       - name: Create folders
         run: |
@@ -72,9 +75,20 @@ jobs:
             mkdir -p ${{github.workspace}}/build
             mkdir -p ${{github.workspace}}/install
 
-      - name: Extract VTK tgz
+      - name: Extract VTK tgz (Linux)
         run: |
-            tar -xvzf $VTK_NAME -C vtk/
+            tar -xvzf vtk-manylinux2014_${{inputs.arch}}.tar.gz -C vtk/
+        if: runner.os == 'Linux'
+
+      - name: Extract VTK tgz (MacOS)
+        run: |
+            tar -xvzf vtk-macOS-x86_64.tar.gz -C vtk/
+        if: runner.os == 'MacOS'
+
+      - name: Extract VTK tgz (Windows)
+        run: |
+            tar -xvzf vtk-Windows-x86_64.tar.gz -C vtk/
+        if: runner.os == 'Windows'
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
