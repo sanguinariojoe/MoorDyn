@@ -84,6 +84,9 @@ jobs:
       - name: Extract VTK tgz (Linux)
         run: |
             tar -xvzf vtk-manylinux2014_${{inputs.arch}}.tar.gz -C vtk/
+            if [ ! -d "vtk/lib" ]; then
+                ln -s vtk/lib64 vtk/lib
+            fi
         if: runner.os == 'Linux'
 
       - name: Extract VTK tgz (Windows)
