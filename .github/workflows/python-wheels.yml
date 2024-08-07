@@ -52,7 +52,7 @@ jobs:
 
   build_Linux_x86_64:
     name: Build Linux_x86_64
-    uses: FloatingArrayDesign/MoorDyn/.github/workflows/python-wheels-emulated.yml@python
+    uses: core-marine-dev/MoorDyn/.github/workflows/python-wheels-emulated.yml@python
     with:
       os: '["ubuntu-22.04"]'
       arch: "x86_64"
@@ -60,7 +60,7 @@ jobs:
 
   build_Windows_AMD64:
     name: Build Windows_AMD64
-    uses: FloatingArrayDesign/MoorDyn/.github/workflows/python-wheels-emulated.yml@python
+    uses: core-marine-dev/MoorDyn/.github/workflows/python-wheels-emulated.yml@python
     with:
       os: '["windows-latest"]'
       arch: "AMD64"
@@ -68,7 +68,7 @@ jobs:
 
   build_MacOS_x86_64:
     name: Build Windows_x86_64
-    uses: FloatingArrayDesign/MoorDyn/.github/workflows/python-wheels-emulated.yml@python
+    uses: core-marine-dev/MoorDyn/.github/workflows/python-wheels-emulated.yml@python
     with:
       os: '["macOS-latest"]'
       arch: "x86_64"
@@ -76,7 +76,7 @@ jobs:
 
   build_Linux_i686:
     name: Build Linux_i686
-    uses: FloatingArrayDesign/MoorDyn/.github/workflows/python-wheels-emulated.yml@python
+    uses: core-marine-dev/MoorDyn/.github/workflows/python-wheels-emulated.yml@python
     with:
       os: '["ubuntu-22.04"]'
       arch: "i686"
@@ -84,7 +84,7 @@ jobs:
 
   build_Linux_aarch64:
     name: Build Linux_aarch64
-    uses: FloatingArrayDesign/MoorDyn/.github/workflows/python-wheels-emulated.yml@python
+    uses: core-marine-dev/MoorDyn/.github/workflows/python-wheels-emulated.yml@python
     with:
       os: '["ubuntu-22.04"]'
       arch: "aarch64"
@@ -92,7 +92,7 @@ jobs:
 
   build_Linux_ppc64le:
     name: Build Linux_ppc64le
-    uses: FloatingArrayDesign/MoorDyn/.github/workflows/python-wheels-emulated.yml@python
+    uses: core-marine-dev/MoorDyn/.github/workflows/python-wheels-emulated.yml@python
     with:
       os: '["ubuntu-22.04"]'
       arch: "ppc64le"
@@ -100,7 +100,7 @@ jobs:
 
   build_Linux_s390x:
     name: Build Linux_s390x
-    uses: FloatingArrayDesign/MoorDyn/.github/workflows/python-wheels-emulated.yml@python
+    uses: core-marine-dev/MoorDyn/.github/workflows/python-wheels-emulated.yml@python
     with:
       os: '["ubuntu-22.04"]'
       arch: "s390x"
