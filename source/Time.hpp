@@ -311,6 +311,69 @@ class TimeScheme : public io::IO
 class Waves;
 typedef std::shared_ptr<Waves> WavesRef;
 
+template<unsigned int NSTATE, unsigned int NDERIV>
+class TimeSchemeBase;
+
+/** @class StationaryScheme Time.hpp
+ * @brief A stationary solution
+ *
+ * The stationary solution is featured by the lack of velocity on the system,
+ * i.e. the system positions are integrating directly from the accelerations
+ */
+class StationaryScheme : public TimeSchemeBase<2, 1>
+{
+	template<unsigned int NSTATE, unsigned int NDERIV>
+	friend class TimeSchemeBase;
+
+  public:
+	/** @brief Costructor
+	 * @param log Logging handler
+	 * @param waves Waves instance
+	 */
+	StationaryScheme(moordyn::Log* log, WavesRef waves);
+
+	/// @brief Destructor
+	~StationaryScheme() {}
+
+	/** @brief Run a time step
+	 *
+	 * This function is the one that must be specialized on each time scheme
+	 * @param dt Time step
+	 */
+	void Step(real& dt);
+
+	/** @brief Get the error computed at the last time step
+	 * @return The error, StationaryScheme::_error
+	 */
+	inline real Error() const { return _error; }
+
+	/** @brief Compute the number of state variables
+	 *
+	 * This can be used to renormalize the error, so it makes more sense to the
+	 * final user
+	 * @return The number of state variables
+	 * @note Each entry on the states is considered a single variable, that is
+	 * no matter if the state is a scalar, a vector or a quaternion, it is
+	 * considered as a single entry
+	 */
+	inline unsigned int NStates() const {
+		unsigned int n = bodies.size() + rods.size() + points.size();
+		for (unsigned int i = 0; i < lines.size(); i++)
+			n += r[0].lines[i].pos.size();
+		return n;
+	}
+
+  private:
+	/** The last computed acceleration module
+	 * @see DMoorDynStateDt::MakeStationary()
+	 * @see StationaryScheme::Error()
+	 */
+	real _error;
+
+	/// The convergence boosting rate
+	real _booster;
+};
+
 /** @class TimeSchemeBase Time.hpp
  * @brief A generic abstract integration scheme
  *
@@ -772,66 +835,6 @@ class TimeSchemeBase : public TimeScheme
 
 	/// The TimeSchemeBase::CalcStateDeriv() mask
 	mask _calc_mask;
-};
-
-/** @class StationaryScheme Time.hpp
- * @brief A stationary solution
- *
- * The stationary solution is featured by the lack of velocity on the system,
- * i.e. the system positions are integrating directly from the accelerations
- */
-class StationaryScheme : public TimeSchemeBase<2, 1>
-{
-	template<unsigned int NSTATE, unsigned int NDERIV>
-	friend class TimeSchemeBase;
-
-  public:
-	/** @brief Costructor
-	 * @param log Logging handler
-	 * @param waves Waves instance
-	 */
-	StationaryScheme(moordyn::Log* log, WavesRef waves);
-
-	/// @brief Destructor
-	~StationaryScheme() {}
-
-	/** @brief Run a time step
-	 *
-	 * This function is the one that must be specialized on each time scheme
-	 * @param dt Time step
-	 */
-	void Step(real& dt);
-
-	/** @brief Get the error computed at the last time step
-	 * @return The error, StationaryScheme::_error
-	 */
-	inline real Error() const { return _error; }
-
-	/** @brief Compute the number of state variables
-	 *
-	 * This can be used to renormalize the error, so it makes more sense to the
-	 * final user
-	 * @return The number of state variables
-	 * @note Each entry on the states is considered a single variable, that is
-	 * no matter if the state is a scalar, a vector or a quaternion, it is
-	 * considered as a single entry
-	 */
-	inline unsigned int NStates() const {
-		unsigned int n = bodies.size() + rods.size() + points.size();
-		for (unsigned int i = 0; i < lines.size(); i++)
-			n += r[0].lines[i].pos.size();
-		return n;
-	}
-
-  private:
-	/** The last computed acceleration module
-	 * @see DMoorDynStateDt::MakeStationary()
-	 * @see StationaryScheme::Error()
-	 */
-	real _error;
-
-	/// The convergence boosting rate
-	real _booster;
 };
 
 /** @class EulerScheme Time.hpp
