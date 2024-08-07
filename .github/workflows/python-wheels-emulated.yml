@@ -15,13 +15,6 @@ on:
         
 permissions: write-all
 
-env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
-  VTK_VERSION_MAJOR: 9
-  VTK_VERSION_MINOR: 2
-  VTK_VERSION_PATCH: 6
-
 jobs:
   build_wheels:
     name: Build Python wheels
@@ -34,9 +27,9 @@ jobs:
       CIBW_SKIP: "*-win32*"
       CIBW_ARCHS: ${{inputs.arch}}
       CIBW_BEFORE_ALL: >
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DEXTERNAL_EIGEN:BOOL=OFF -DPYTHON_WRAPPER:BOOL=OFF -DFORTRAN_WRAPPER:BOOL=OFF -DRUST_WRAPPER:BOOL=OFF -DUSE_VTK=ON -DVTK_DIR=${{github.workspace}}/vtk/lib/cmake/vtk-${{env.VTK_VERSION_MAJOR}}.${{env.VTK_VERSION_MINOR}}/ -DMOORDYN_PACKAGE_IGNORE_VTK_DEPENDENCY=ON -DBUILD_TESTING=OFF &&
-        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} &&
-        cmake --install ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DEXTERNAL_EIGEN:BOOL=OFF -DPYTHON_WRAPPER:BOOL=OFF -DFORTRAN_WRAPPER:BOOL=OFF -DRUST_WRAPPER:BOOL=OFF -DUSE_VTK=ON -DVTK_DIR=${{github.workspace}}/vtk/lib/cmake/vtk-9.2/ -DMOORDYN_PACKAGE_IGNORE_VTK_DEPENDENCY=ON -DBUILD_TESTING=OFF &&
+        cmake --build ${{github.workspace}}/build --config Release &&
+        cmake --install ${{github.workspace}}/build --config Release
       
     steps:
       - uses: actions/checkout@v4
@@ -70,7 +63,7 @@ jobs:
       - name: download pre-built VTK static library
         uses: suisei-cn/actions-download-file@v1.6.0
         with:
-          url: https://github.com/sanguinariojoe/vtk-builds/releases/download/VTK-${{env.VTK_VERSION_MAJOR}}.${{env.VTK_VERSION_MINOR}}.${{env.VTK_VERSION_PATCH}}-static/$VTK_NAME
+          url: https://github.com/sanguinariojoe/vtk-builds/releases/download/VTK-9.2.6-static/$VTK_NAME
           target: ${{github.workspace}}/
 
       - name: Create folders
