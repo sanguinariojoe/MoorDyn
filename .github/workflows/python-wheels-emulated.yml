@@ -27,9 +27,12 @@ jobs:
       CIBW_SKIP: "*-win32*"
       CIBW_ARCHS: ${{inputs.arch}}
       CIBW_BEFORE_ALL_LINUX: >
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DEXTERNAL_EIGEN:BOOL=OFF -DPYTHON_WRAPPER:BOOL=OFF -DFORTRAN_WRAPPER:BOOL=OFF -DRUST_WRAPPER:BOOL=OFF -DUSE_VTK=ON -DVTK_DIR=${{github.workspace}}/vtk/lib64/cmake/vtk-9.2/ -DMOORDYN_PACKAGE_IGNORE_VTK_DEPENDENCY=ON -DBUILD_TESTING=OFF &&
-        cmake --build ${{github.workspace}}/build --config Release &&
-        cmake --install ${{github.workspace}}/build --config Release
+        echo "Considering vtk-manylinux2014_`uname -m`.tar.gz..." &&
+        mkdir -p vtk &&
+        tar -xvzf vtk-manylinux2014_`uname -m`.tar.gz -C vtk/ &&
+        cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=install -DEXTERNAL_EIGEN:BOOL=OFF -DPYTHON_WRAPPER:BOOL=OFF -DFORTRAN_WRAPPER:BOOL=OFF -DRUST_WRAPPER:BOOL=OFF -DUSE_VTK=ON -DVTK_DIR=vtk/lib64/cmake/vtk-9.2/ -DMOORDYN_PACKAGE_IGNORE_VTK_DEPENDENCY=ON -DBUILD_TESTING=OFF &&
+        cmake --build build --config Release &&
+        cmake --install build --config Release
       CIBW_BEFORE_ALL_WINDOWS: >
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DEXTERNAL_EIGEN:BOOL=OFF -DPYTHON_WRAPPER:BOOL=OFF -DFORTRAN_WRAPPER:BOOL=OFF -DRUST_WRAPPER:BOOL=OFF -DUSE_VTK=ON -DVTK_DIR=${{github.workspace}}/vtk/lib/cmake/vtk-9.2/ -DMOORDYN_PACKAGE_IGNORE_VTK_DEPENDENCY=ON -DBUILD_TESTING=OFF &&
         cmake --build ${{github.workspace}}/build --config Release &&
@@ -80,15 +83,6 @@ jobs:
             mkdir -p ${{github.workspace}}/vtk
             mkdir -p ${{github.workspace}}/build
             mkdir -p ${{github.workspace}}/install
-
-      - name: Extract VTK tgz (Linux)
-        run: |
-            tar -xvzf vtk-manylinux2014_${{inputs.arch}}.tar.gz -C vtk/
-            if [ ! -d "${{github.workspace}}/vtk/lib" ]; then
-                ln -s ${{github.workspace}}/vtk/lib64 ${{github.workspace}}/vtk/lib
-            fi
-            ls -lh vtk/
-        if: runner.os == 'Linux'
 
       - name: Extract VTK tgz (Windows)
         run: |
