@@ -492,8 +492,11 @@ ABScheme<order, local>::Step(real& dt)
 template<unsigned int NSTATE, unsigned int NDERIV>
 ImplicitSchemeBase<NSTATE, NDERIV>::ImplicitSchemeBase(moordyn::Log* log,
                                                        WavesRef waves,
-                                                       unsigned int iters)
+                                                       unsigned int iters,
+                                                       real tol,
+                                                       real tol_rel)
 	: TimeSchemeBase<NSTATE, NDERIV>(log, waves)
+	, ImplicitSchemeBaseAutoStop(tol, tol_rel)
 	, _iters(iters)
 	, _c0(0.9)
 	, _c1(0.0)
@@ -518,11 +521,9 @@ AndersonSchemeBase<NSTATE, NDERIV>::AndersonSchemeBase(moordyn::Log* log,
                                                        real tol,
                                                        real tol_rel,
                                                        real regularization)
-	: ImplicitSchemeBase<NSTATE, NDERIV>(log, waves, iters)
+	: ImplicitSchemeBase<NSTATE, NDERIV>(log, waves, iters, tol, tol_rel)
 	, _iters(iters)
 	, _m((std::min)(m, iters))
-	, _tol(tol)
-	, _tol_rel(tol_rel)
 	, _regularization(regularization)
 	, _n(0)
 {
@@ -648,16 +649,30 @@ ImplicitEulerScheme::Step(real& dt)
 {
 	t += _dt_factor * dt;
 	rd[1] = rd[0];  // We use rd[1] just as a tmp storage to compute relaxation
+	real res0_avg, res0_max;
 	for (unsigned int i = 0; i < iters(); i++) {
 		r[1] = r[0] + rd[0] * (_dt_factor * dt);
 		Update(_dt_factor * dt, 1);
 		CalcStateDeriv(0);
 
+		auto [res_avg, res_max] = this->residue(1, 0);
+		if (i == 0) {
+			res0_avg = res_avg;
+			res0_max = res_max;
+		}
 		if (i < iters() - 1) {
 			// We cannot relax on the last step
 			const real relax = Relax(i);
 			rd[0].Mix(rd[1], relax);
 			rd[1] = rd[0];
+		}
+
+		// Let's use the maximum residue as cenvergence indicator
+		if (this->converged(res_max, res0_max)) {
+			std::cout << "Converged at iter " << i
+			          << " with an error = " << res_max << " m/s2 ("
+			          << res_max / res0_max << ")" << std::endl;
+			break;
 		}
 	}
 
@@ -732,6 +747,7 @@ ImplicitNewmarkScheme::Step(real& dt)
 
 	t += dt;
 	rd[2] = rd[0];  // We use rd[2] just as a tmp storage to compute relaxation
+	real res0_avg, res0_max;
 	for (unsigned int i = 0; i < iters(); i++) {
 		// At the time of computing r acts as an input, and rd as an output.
 		// Thus we just need to apply the Newmark scheme on r[1] and store
@@ -740,12 +756,22 @@ ImplicitNewmarkScheme::Step(real& dt)
 		Update(dt, 1);
 		CalcStateDeriv(1);
 
+		auto [res_avg, res_max] = this->residue(2, 1);
+		if (i == 0) {
+			res0_avg = res_avg;
+			res0_max = res_max;
+		}
+
 		if (i < iters() - 1) {
 			// We cannot relax the last step
 			const real relax = Relax(i);
 			rd[1].Mix(rd[2], relax);
 			rd[2] = rd[1];
 		}
+
+		// Let's use the maximum residue as cenvergence indicator
+		if (this->converged(res_max, res0_max))
+			break;
 	}
 
 	// Apply
@@ -776,7 +802,8 @@ ImplicitWilsonScheme::Step(real& dt)
 {
 	const real tdt = _theta * dt;
 	t += tdt;
-	rd[1] = rd[0];  // We use rd[1] just as a tmp storage to compute relaxation
+	rd[2] = rd[0];  // We use rd[2] just as a tmp storage to compute relaxation
+	real res0_avg, res0_max;
 	for (unsigned int i = 0; i < iters(); i++) {
 		// At the time of computing r acts as an input, and rd as an output.
 		// Thus we just need to apply the Newmark scheme on r[1] and store
@@ -785,12 +812,22 @@ ImplicitWilsonScheme::Step(real& dt)
 		Update(tdt, 1);
 		CalcStateDeriv(1);
 
-		if (i < iters() - 1) {
-			// We cannot relax on the last step
-			const real relax = Relax(i);
-			rd[0].Mix(rd[1], relax);
-			rd[1] = rd[0];
+		auto [res_avg, res_max] = this->residue(2, 1);
+		if (i == 0) {
+			res0_avg = res_avg;
+			res0_max = res_max;
 		}
+
+		if (i < iters() - 1) {
+			// We cannot relax the last step
+			const real relax = Relax(i);
+			rd[1].Mix(rd[2], relax);
+			rd[2] = rd[1];
+		}
+
+		// Let's use the maximum residue as cenvergence indicator
+		if (this->converged(res_max, res0_max))
+			break;
 	}
 
 	// Apply

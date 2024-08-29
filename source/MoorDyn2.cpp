@@ -90,6 +90,8 @@ moordyn::MoorDyn::MoorDyn(const char* infilename, int log_level)
   , cfl(0.5)
   , dtOut(0.0)
   , _t_integrator(NULL)
+  , t_integrator_res(0.0)
+  , t_integrator_rres(0.0)
   , ICgenDynamic(false)
   , ICfile("")
   , env(std::make_shared<EnvCond>())
@@ -1648,6 +1650,12 @@ moordyn::MoorDyn::ReadInFile()
 		}
 	}
 	LOGMSG << "Time integrator = " << _t_integrator->GetName() << endl;
+	auto implicit_t_integrator = dynamic_cast<ImplicitSchemeBaseAutoStop*>(
+		_t_integrator);
+	if (implicit_t_integrator != nullptr) {
+		implicit_t_integrator->tol(t_integrator_res);
+		implicit_t_integrator->tol_rel(t_integrator_rres);
+	}
 	_t_integrator->SetGround(GroundBody);
 	for (auto obj : BodyList)
 		_t_integrator->AddBody(obj);
@@ -2149,6 +2157,10 @@ moordyn::MoorDyn::readOptionsLine(vector<string>& in_txt, int i)
 			LOGWRN << "Defaulting to RK2 time integration";
 			LOGERR << err_msg << endl;
 		}
+	} else if (name == "tSchemeTol") {
+		t_integrator_res = atof(entries[0].c_str());
+	} else if (name == "tSchemeRelTol") {
+		t_integrator_rres = atof(entries[0].c_str());
 	} else if ((name == "g") || (name == "gravity"))
 		env->g = atof(entries[0].c_str());
 	else if ((name == "Rho") || (name == "rho") || (name == "WtrDnsty"))

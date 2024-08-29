@@ -1272,33 +1272,109 @@ class ABScheme : public LocalTimeSchemeBase<1, 5>
 	}
 };
 
+/** @class ImplicitSchemeBaseAutoStop Time.hpp
+ * @brief An abstract class for Implicit time schemes with convergence criteria
+ */
+class ImplicitSchemeBaseAutoStop
+{
+  public:
+	/** @brief Constructor
+	 * @param tol Minimum residue to consider that the solution has converged
+	 * @param tol_rel Relative residue reduction to consider that the solution
+	 * has converged
+	 */
+	ImplicitSchemeBaseAutoStop(real tol = 0.0,
+	                           real tol_rel = 0.0)
+		: _tol(tol)
+		, _tol_rel(tol_rel)
+	{}
+
+	/// @brief Destructor
+	virtual ~ImplicitSchemeBaseAutoStop() {}
+
+	/** @brief Get the residual tolerance
+	 *
+	 * When the maximum residue falls below this value the inner iteration
+	 * is stopped
+	 * @return The tolerance
+	 */
+	inline real tol() const { return _tol; }
+
+	/** @brief Set the residual tolerance
+	 *
+	 * When the maximum residue falls below this value the inner iteration
+	 * is stopped
+	 * @param t The tolerance
+	 */
+	inline void tol(const real t) { _tol = t; }
+
+	/** @brief Get the residual relative tolerance
+	 *
+	 * When the maximum residue ratio falls below this value the inner
+	 * iteration is stopped
+	 * @return The relative tolerance
+	 */
+	inline real tol_rel() const { return _tol_rel; }
+
+	/** @brief Set the residual relative tolerance
+	 *
+	 * When the maximum residue ratio falls below this value the inner
+	 * iteration is stopped
+	 * @param t The relative tolerance
+	 */
+	inline void tol_rel(const real t) { _tol_rel = t; }
+
+  private:
+	/// The number of iterations
+	unsigned int _iters;
+
+	/// Minimum residue to consider that the solution has converged
+	real _tol;
+
+	/// Relative residue reduction to consider that the solution has converged
+	real _tol_rel;
+
+	/// The constant relaxation part coefficient
+	real _c0;
+
+	/// The tanh relaxation part coefficient
+	real _c1;
+};
+
+
 /** @class ImplicitSchemeBase Time.hpp
  * @brief A generic abstract implicit scheme
  *
  * This class can be later overloaded to implement a plethora of time schemes
  */
 template<unsigned int NSTATE, unsigned int NDERIV>
-class ImplicitSchemeBase : public TimeSchemeBase<NSTATE, NDERIV>
+class ImplicitSchemeBase : public TimeSchemeBase<NSTATE, NDERIV>,
+                           public ImplicitSchemeBaseAutoStop
 {
   public:
 	/** @brief Constructor
 	 * @param log Logging handler
 	 * @param waves Waves instance
 	 * @param iters The number of inner iterations to find the derivative
+	 * @param tol Minimum residue to consider that the solution has converged
+	 * @param tol_rel Relative residue reduction to consider that the solution
+	 * has converged
 	 */
 	ImplicitSchemeBase(moordyn::Log* log,
 	                   WavesRef waves,
-	                   unsigned int iters = 10);
+	                   unsigned int iters = 10,
+	                   real tol = 0.0,
+	                   real tol_rel = 0.0);
 
 	/// @brief Destructor
 	virtual ~ImplicitSchemeBase() {}
 
-  protected:
 	/** @brief Get the number of subiterations
 	 * @return The number of iterations
 	 */
 	inline unsigned int iters() const { return _iters; }
 
+  protected:
 	/** @brief Get the constant relaxation part coefficient
 	 * @return The constant relaxation part coefficient
 	 */
@@ -1326,6 +1402,67 @@ class ImplicitSchemeBase : public TimeSchemeBase<NSTATE, NDERIV>
 	 * @param iter The current iteration
 	 */
 	real Relax(const unsigned int& iter);
+
+	/** @brief Check if the iterator has converged
+	 * @param res The current residue
+	 * @param res0 The residue resulting from the first iteration
+	 * @return true if the residue has fallen below the tolerance, false
+	 * otherwise
+	 */
+	inline bool converged(const real res, const real res0) const
+	{
+		return (res < this->tol()) || (res / res0 < this->tol_rel());
+	}
+
+	/** @brief Get the stats of the residues
+	 * @param org The previous derivative computed
+	 * @param dst The current derivative
+	 * @return The average and maximum residue
+	 * @note Angular accelerations of bodies and rods are just took into
+	 * account indirectly, as results from the linear accelerations of attached
+	 * lines.
+	 */
+	inline const std::tuple<real, real> residue(unsigned int org, unsigned int dst) const
+	{
+		unsigned int i, j, n = 0;
+		real res_avg, res_max = 0;
+		for (i = 0; i < this->lines.size(); i++) {
+			for (j = 0; j < this->rd[org].lines[i].acc.size(); j++) {
+				const vec x = this->rd[org].lines[i].acc[j];
+				const vec fx = this->rd[dst].lines[i].acc[j];
+				const real res = (fx - x).norm();
+				res_avg += res;
+				res_max = (std::max)(res_max, res);
+				n++;
+			}
+		}
+		for (i = 0; i < this->points.size(); i++) {
+			const vec x = this->rd[org].points[i].acc;
+			const vec fx = this->rd[dst].points[i].acc;
+			const real res = (fx - x).norm();
+			res_avg += res;
+			res_max = (std::max)(res_max, res);
+			n++;
+		}
+		for (i = 0; i < this->rods.size(); i++) {
+			const vec6 x = this->rd[org].rods[i].acc;
+			const vec6 fx = this->rd[dst].rods[i].acc;
+			const real res = (fx.head<3>() - x.head<3>()).norm();
+			res_avg += res;
+			res_max = (std::max)(res_max, res);
+			n++;
+		}
+		for (i = 0; i < this->bodies.size(); i++) {
+			const vec6 x = this->rd[org].bodies[i].acc;
+			const vec6 fx = this->rd[dst].bodies[i].acc;
+			const real res = (fx.head<3>() - x.head<3>()).norm();
+			res_avg += res;
+			res_max = (std::max)(res_max, res);
+			n += 2;
+		}
+
+		return { res_avg / n, res_max };
+	}
 
   private:
 	/// The number of iterations
@@ -1367,22 +1504,6 @@ class AndersonSchemeBase : public ImplicitSchemeBase<NSTATE, NDERIV>
 	/// @brief Destructor
 	virtual ~AndersonSchemeBase() {}
 
-	/** @brief Get the residual tolerance
-	 *
-	 * When the maximum residue falls below this value the inner iteration
-	 * is stopped
-	 * @return The tolerance
-	 */
-	inline real tol() const { return _tol; }
-
-	/** @brief Set the residual tolerance
-	 *
-	 * When the maximum residue falls below this value the inner iteration
-	 * is stopped
-	 * @param t The tolerance
-	 */
-	inline void tol(const real t) { _tol = t; }
-
   protected:
 	/** @brief Get the number of subiterations
 	 * @return The number of iterations
@@ -1404,7 +1525,7 @@ class AndersonSchemeBase : public ImplicitSchemeBase<NSTATE, NDERIV>
 	inline bool converged() const
 	{
 		const real g = _g.col(1).cwiseAbs().mean();
-		return (g < _tol) || (g / _g0 < _tol_rel);
+		return (g < this->tol()) || (g / _g0 < this->tol_rel());
 	}
 
 	/** @brief Get the stats of the residues
@@ -1424,12 +1545,6 @@ class AndersonSchemeBase : public ImplicitSchemeBase<NSTATE, NDERIV>
 
 	/// The number of points to compute Anderson's acceleration
 	unsigned int _m;
-
-	/// Minimum residue to consider that the solution has converged
-	real _tol;
-
-	/// Relative residue reduction to consider that the solution has converged
-	real _tol_rel;
 
 	/// Regularization factor
 	real _regularization;

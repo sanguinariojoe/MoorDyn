@@ -371,6 +371,12 @@ class MoorDyn final : public io::IO
 	inline void SetTimeScheme(TimeScheme* tscheme) {
 		if (_t_integrator) delete _t_integrator;
 		_t_integrator = tscheme;
+		auto implicit_t_integrator = dynamic_cast<ImplicitSchemeBaseAutoStop*>(
+			_t_integrator);
+		if (implicit_t_integrator != nullptr) {
+			implicit_t_integrator->tol(t_integrator_res);
+			implicit_t_integrator->tol_rel(t_integrator_rres);
+		}
 		_t_integrator->SetGround(GroundBody);
 		for (auto obj : BodyList)
 			_t_integrator->AddBody(obj);
@@ -566,6 +572,14 @@ class MoorDyn final : public io::IO
 
 	/// The time integration scheme
 	TimeScheme* _t_integrator;
+	/** maximum acceleration error to consider that the time integrator has
+	 * converged (only for semi-implicit time schemes)
+	 */
+	real t_integrator_res;
+	/** maximum acceleration error reduction to consider that the time
+	 * integrator has converged (only for semi-implicit time schemes)
+	 */
+	real t_integrator_rres;
 
 	/// General options of the Mooring system
 	EnvCondRef env;
